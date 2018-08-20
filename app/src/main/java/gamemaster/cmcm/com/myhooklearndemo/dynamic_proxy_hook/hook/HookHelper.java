@@ -1,5 +1,6 @@
 package gamemaster.cmcm.com.myhooklearndemo.dynamic_proxy_hook.hook;
 
+import android.app.Activity;
 import android.app.Instrumentation;
 
 import java.lang.reflect.Field;
@@ -12,7 +13,7 @@ import java.lang.reflect.Method;
 
 public class HookHelper {
 
-    public static void attachContext() throws Exception {
+    public static void attachContextInActivityThread() throws Exception {
         // 先获取到当前的ActivityThread对象
 
         Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
@@ -35,5 +36,26 @@ public class HookHelper {
         // 偷梁换柱，注意！！！偷梁换柱时，替换的对象也一定是Instrumentation类型的！！！
 
         mInstrumentationField.set(activityThread, instrumentationHook);
+    }
+
+    public static void attachContextInActivity(Activity activity) throws Exception {
+        // 先获取到当前的ActivityThread对象
+
+        Class<?> k = Activity.class;
+        try {
+            //通过Activity.class 拿到 mInstrumentation字段
+            Field field = k.getDeclaredField("mInstrumentation");
+            field.setAccessible(true);
+            //根据activity内mInstrumentation字段 获取Instrumentation对象
+            Instrumentation instrumentation = (Instrumentation)field.get(activity);
+            //创建代理对象
+            Instrumentation instrumentationProxy = new InstrumentationHook(instrumentation);
+            //进行替换
+            field.set(activity,instrumentationProxy);
+        } catch (IllegalAccessException e){
+            e.printStackTrace();
+        }catch (NoSuchFieldException e){
+            e.printStackTrace();
+        }
     }
 }

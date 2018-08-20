@@ -12,3 +12,21 @@ Instrumentation instrumentationHook = new InstrumentationHook(mInstrumentation);
 // 偷梁换柱，注意！！！偷梁换柱时，替换的对象也一定是Instrumentation类型的！！！
 
 mInstrumentationField.set(activityThread, instrumentationHook);
+
+
+3. 刚开始发现怎么都是只有Context的startactivity, 的有效。而用Activity 的startActivity 没有写。
+后来发现是把Hook 的方法放到Activity 中了,虽然结果可以运行,但是也只能用Context(getApplicationContext.startActivity)的
+启动方式,后来放到Application,就发现直接用startActivity
+
+原因：因为直接startActivity，调用的是Activity.java类，这个类里面带了一个mInstrument。我昨天一直纠结在怎么反射替换掉Activity里的mInstrument，
+今天早上发现，其实Activity里的mInstrument的赋值，是由ActivityThread调用的attach方法赋值
+
+4. 只针对Activity进行Hook时，只需要将Activity中的mInstrumentation替换为代理类
+
+5. 替换Activity中的mInstrumentation变量时，要注意不能在Activity的attachBaseContext回调中进行替换，应该在onCreate中进行替换
+因为这三个时间发生按照先后顺序为：
+attachBaseContext；
+mInstrumentation = instr;
+mInstrumentation.callActivityOnCreate(activity, r.state);
+
+如果在attachBaseContext中进行替换，会被后续的正常复制给覆盖掉。所以要在onCreate中进行赋值
