@@ -1,0 +1,14 @@
+1. 启动Activity时，应该使用，getApplicationContext().startActivity(intent);
+
+因为：注意这里使用的ApplicationContext 启动的Activity
+ 因为Activity对象的startActivity使用的并不是ContextImpl的mInstrumentation
+ 而是自己的mInstrumentation, 如果你需要这样, 可以自己Hook比较简单, 直接替换这个Activity的此字段即可.
+
+
+2. HookHelper中偷梁换柱最后一步中注意保持原字段的类型不变
+
+Instrumentation instrumentationHook = new InstrumentationHook(mInstrumentation);
+
+// 偷梁换柱，注意！！！偷梁换柱时，替换的对象也一定是Instrumentation类型的！！！
+
+mInstrumentationField.set(activityThread, instrumentationHook);
